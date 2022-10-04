@@ -63,6 +63,8 @@ class GodPipeline extends OpenCvPipeline {
                         input.rows()*(3f/4f)),
                 new Scalar(0, 255, 0), 4);
 
+        Imgproc.cvtColor(input, lol, Imgproc.COLOR_RGB2C);
+
         return input;
     }
 }
