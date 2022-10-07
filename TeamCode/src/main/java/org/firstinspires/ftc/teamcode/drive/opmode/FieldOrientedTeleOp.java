@@ -14,6 +14,7 @@ public class FieldOrientedTeleOp extends OpMode {
     private MecanumDrive drive;
     private GamepadEx gamepadEx;
     private RevIMU gyro;
+    
 
     @Override
     public void init() {
@@ -30,7 +31,13 @@ public class FieldOrientedTeleOp extends OpMode {
 
     @Override
     public void loop() {
-        drive.driveFieldCentric(gamepadEx.getLeftX(), gamepadEx.getLeftY(), gamepadEx.getRightX(), gyro.getHeading());
+        drive.driveFieldCentric(
+                gamepadEx.getLeftX(),
+                gamepadEx.getLeftY(),
+                gamepadEx.getRightX(),
+                gyro.getHeading());
+
+
 
     }
 }
