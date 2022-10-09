@@ -51,6 +51,7 @@ public class CamTest extends OpMode {
         int[] colour = godPipeline.getColour();
         telemetry.addData("Cr", colour[0]);
         telemetry.addData("Cb", colour[1]);
+        telemetry.update();
 
     }
 }
@@ -68,7 +69,7 @@ class GodPipeline extends OpenCvPipeline {
     int colour[] = {0, 0};
 
     @Override
-    public Mat init(Mat firstFrame) {
+    public void init(Mat firstFrame) {
 
         Imgproc.cvtColor(firstFrame, YCrCb, Imgproc.COLOR_RGB2YCrCb);
 
