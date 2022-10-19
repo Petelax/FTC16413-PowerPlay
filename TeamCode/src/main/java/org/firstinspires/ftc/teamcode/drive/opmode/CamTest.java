@@ -48,9 +48,12 @@ public class CamTest extends OpMode {
 
     @Override
     public void loop() {
-        int[] colour = godPipeline.getColour();
-        telemetry.addData("Cr", colour[0]);
-        telemetry.addData("Cb", colour[1]);
+        int conePos = godPipeline.getColour();
+        int[] colour = godPipeline.getYCrCbVals();
+        telemetry.addData("Y", colour[0]);
+        telemetry.addData("Cr", colour[1]);
+        telemetry.addData("Cb", colour[2]);
+        telemetry.addData("conePos", conePos);
         telemetry.update();
 
     }
@@ -58,22 +61,22 @@ public class CamTest extends OpMode {
 
 class GodPipeline extends OpenCvPipeline {
     boolean viewportPaused;
-    private Mat coneSubmat;
+    //private Mat coneSubmat;
     private Mat YCrCb;
 
-    private Point point0 = new Point(360/3f, 240/3f);
-    private Point point1 = new Point(360*(2f/3), 240*(2f/3));
-    private Rect coneRect = new Rect(point0,point1);
+    private final Point point0 = new Point(360/3f, 240/3f);
+    private final Point point1 = new Point(360*(2f/3), 240*(2f/3));
+    private final Rect coneRect = new Rect(point0,point1);
 
-    int Cr, Cb;
-    int colour[] = {0, 0};
+    int Y, Cr, Cb;
+    int[] colour = {0, 0, 0};
 
     @Override
     public void init(Mat firstFrame) {
-
+        YCrCb = new Mat();
         Imgproc.cvtColor(firstFrame, YCrCb, Imgproc.COLOR_RGB2YCrCb);
 
-        coneSubmat = YCrCb.submat(coneRect);
+        //coneSubmat = YCrCb.submat(coneRect);
     }
     @Override
     public Mat processFrame(Mat input) {
@@ -82,16 +85,30 @@ class GodPipeline extends OpenCvPipeline {
 
         Imgproc.rectangle(input, coneRect, new Scalar(0,255,0), 4);
 
+        Y = (int) Core.mean(YCrCb).val[0];
         Cb = (int) Core.mean(YCrCb).val[2];
         Cr = (int) Core.mean(YCrCb).val[1];
 
-        colour[0] = Cr;
-        colour[1] = Cb;
+        colour[0] = Y;
+        colour[1] = Cr;
+        colour[2] = Cb;
 
         return YCrCb;
     }
 
-    public int[] getColour() {
+    public int getColour() {
+        int output = -1;
+        if(Cb > 220 && Cr > 220){
+            output = 0;
+        } else if(Cr > 220) {
+            output = 1;
+        } else if(Cb > 220) {
+            output = 2;
+        }
+        return output;
+    }
+
+    public int[] getYCrCbVals() {
         return colour;
     }
 }

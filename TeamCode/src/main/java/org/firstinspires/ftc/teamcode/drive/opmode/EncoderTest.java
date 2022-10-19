@@ -4,6 +4,7 @@ import com.arcrobotics.ftclib.drivebase.MecanumDrive;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.hardware.RevIMU;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
+import com.arcrobotics.ftclib.util.Timing;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -17,6 +18,9 @@ bL: forward left odo
 bR: strafe odo
 fR: forward right odo
 
+NEW:
+fL:expansion hub 0
+bL:expansion hub 1
  */
 @TeleOp
 public class EncoderTest extends OpMode {
@@ -34,8 +38,22 @@ public class EncoderTest extends OpMode {
         bL = new Motor(hardwareMap, "bL", 448, 375);
         bR = new Motor(hardwareMap, "bR", 448, 375);
 
+        fL.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        fR.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        bL.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        bR.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+
         drive = new MecanumDrive(fL, fR, bL, bR);
         gyro = new RevIMU(hardwareMap);
+        /*
+        Timing.Timer timer = new Timing.Timer(1);
+        timer.start();
+        while(!timer.done()){
+            telemetry.addData("timering", "lol");
+            telemetry.update();
+        }
+        */
+        telemetry.update();
         gyro.init();
         //gamepadEx = new GamepadEx(gamepad1);
     }
@@ -61,6 +79,7 @@ public class EncoderTest extends OpMode {
         telemetry.addData("bL", bL.getCurrentPosition());
         telemetry.addData("bR", bR.getCurrentPosition());
 
+        telemetry.addData("gyro", gyro.getHeading());
 
     }
 }
