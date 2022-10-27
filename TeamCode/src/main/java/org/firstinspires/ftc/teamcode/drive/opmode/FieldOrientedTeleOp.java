@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode.drive.opmode;
 
+import android.widget.MultiAutoCompleteTextView;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.drivebase.MecanumDrive;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
@@ -8,6 +12,11 @@ import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
+
 @TeleOp
 public class FieldOrientedTeleOp extends OpMode {
 
@@ -15,16 +24,41 @@ public class FieldOrientedTeleOp extends OpMode {
     private MecanumDrive drive;
     private GamepadEx gamepadEx;
     private RevIMU gyro;
+    private OpenCvCamera webcam;
     
 
     @Override
     public void init() {
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         fL = new Motor(hardwareMap, "fL", 448, 375);
         fR = new Motor(hardwareMap, "fR", 448, 375);
         bL = new Motor(hardwareMap, "bL", 448, 375);
         bR = new Motor(hardwareMap, "bR", 448, 375);
         elevator0 = new Motor(hardwareMap, "elevator0", Motor.GoBILDA.RPM_435);
         elevator1 = new Motor(hardwareMap, "elevator1", Motor.GoBILDA.RPM_435);
+
+        /*
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
+            @Override
+            public void onOpened() {
+                webcam.startStreaming(320,240, OpenCvCameraRotation.UPRIGHT);
+
+                FtcDashboard.getInstance().startCameraStream(webcam, 30);
+            }
+
+            @Override
+            public void onError(int errorCode) {
+                telemetry.addData("NOT SHEESH", -1);
+
+            }
+        });
+         */
+        fL.resetEncoder();
+        fR.resetEncoder();
+        bL.resetEncoder();
+        bR.resetEncoder();
 
         fL.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         fR.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
@@ -45,9 +79,11 @@ public class FieldOrientedTeleOp extends OpMode {
                 gamepadEx.getRightX(),
                 gyro.getHeading());
 
+        /*
         double elevator = gamepadEx.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) - gamepadEx.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER);
         elevator0.set(elevator);
         elevator1.set(elevator);
+        */
 
         telemetry.addData("gyro", gyro.getHeading());
         telemetry.update();

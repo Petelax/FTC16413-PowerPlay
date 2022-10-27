@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.drive.opmode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.arcrobotics.ftclib.drivebase.MecanumDrive;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.hardware.RevIMU;
@@ -7,6 +8,11 @@ import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.util.Timing;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
 
 /*
 0:fR
@@ -29,7 +35,7 @@ public class EncoderTest extends OpMode {
     private MecanumDrive drive;
     private GamepadEx gamepadEx;
     private RevIMU gyro;
-
+    private OpenCvCamera webcam;
 
     @Override
     public void init() {
@@ -37,6 +43,24 @@ public class EncoderTest extends OpMode {
         fR = new Motor(hardwareMap, "fR", 448, 375);
         bL = new Motor(hardwareMap, "bL", 448, 375);
         bR = new Motor(hardwareMap, "bR", 448, 375);
+
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
+            @Override
+            public void onOpened() {
+                webcam.startStreaming(320,240, OpenCvCameraRotation.UPRIGHT);
+
+                FtcDashboard.getInstance().startCameraStream(webcam, 30);
+            }
+
+            @Override
+            public void onError(int errorCode) {
+                telemetry.addData("NOT SHEESH", -1);
+
+            }
+        });
 
         fL.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         fR.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
