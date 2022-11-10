@@ -103,7 +103,7 @@ class GodPipeline extends OpenCvPipeline {
 
     public int getColour() {
         int output = -1;
-        if(Cb > 200 && Cr > 200){
+        if(Cb > 180 && Cr > 180){
             output = 0;
         } else if(Cr > 200) {
             output = 1;

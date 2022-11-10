@@ -20,9 +20,9 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 @TeleOp
 public class FieldOrientedTeleOp extends OpMode {
 
-    private Motor fL, fR, bL, bR, elevator0, elevator1;
+    private Motor fL, fR, bL, bR, elevator0, elevator1, arm, intake;
     private MecanumDrive drive;
-    private GamepadEx gamepadEx;
+    private GamepadEx gamepadEx1, gamepadEx2;
     private RevIMU gyro;
     private OpenCvCamera webcam;
     
@@ -36,6 +36,8 @@ public class FieldOrientedTeleOp extends OpMode {
         bR = new Motor(hardwareMap, "bR", 448, 375);
         elevator0 = new Motor(hardwareMap, "elevator0", Motor.GoBILDA.RPM_435);
         elevator1 = new Motor(hardwareMap, "elevator1", Motor.GoBILDA.RPM_435);
+        arm = new Motor(hardwareMap, "arm");
+        intake = new Motor(hardwareMap, "intake");
 
         /*
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -64,26 +66,32 @@ public class FieldOrientedTeleOp extends OpMode {
         fR.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         bL.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         bR.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        arm.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        intake.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
 
         drive = new MecanumDrive(fL, fR, bL, bR);
         gyro = new RevIMU(hardwareMap);
         gyro.init();
-        gamepadEx = new GamepadEx(gamepad1);
+        gamepadEx1 = new GamepadEx(gamepad1);
+        gamepadEx2 = new GamepadEx(gamepad2);
     }
 
     @Override
     public void loop() {
         drive.driveFieldCentric(
-                gamepadEx.getLeftX(),
-                gamepadEx.getLeftY(),
-                gamepadEx.getRightX(),
+                gamepadEx1.getLeftX(),
+                gamepadEx1.getLeftY(),
+                gamepadEx1.getRightX(),
                 gyro.getHeading());
 
-        /*
-        double elevator = gamepadEx.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) - gamepadEx.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER);
+
+        //double elevator = gamepadEx1.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) - gamepadEx1.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER);
+        double elevator = gamepadEx2.getLeftY();
         elevator0.set(elevator);
         elevator1.set(elevator);
-        */
+
+        arm.set(gamepadEx2.getRightX() * 0.5);
+        intake.set(gamepadEx2.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) - gamepadEx2.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER));
 
         telemetry.addData("gyro", gyro.getHeading());
         telemetry.update();
