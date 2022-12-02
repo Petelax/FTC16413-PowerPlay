@@ -57,7 +57,7 @@ public class CamTest extends OpMode {
         int[] colour = godPipeline.getYCrCbVals();
         telemetry.addData("B", colour[0]);
         telemetry.addData("G", colour[1]);
-        telemetry.addData("B", colour[2]);
+        telemetry.addData("R", colour[2]);
         telemetry.addData("conePos", conePos);
         telemetry.update();
 

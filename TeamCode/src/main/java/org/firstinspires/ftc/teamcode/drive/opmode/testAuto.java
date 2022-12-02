@@ -11,15 +11,29 @@ import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.arcrobotics.ftclib.hardware.RevIMU;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorGroup;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.openftc.easyopencv.OpenCvCamera;
 
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_ACCEL;
+import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_ANG_ACCEL;
+import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_ANG_VEL;
+import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_VEL;
+import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MOTOR_VELO_PID;
+import static org.firstinspires.ftc.teamcode.drive.DriveConstants.RUN_USING_ENCODER;
+import static org.firstinspires.ftc.teamcode.drive.DriveConstants.TRACK_WIDTH;
+import static org.firstinspires.ftc.teamcode.drive.DriveConstants.encoderTicksToInches;
+import static org.firstinspires.ftc.teamcode.drive.DriveConstants.kA;
+import static org.firstinspires.ftc.teamcode.drive.DriveConstants.kStatic;
+import static org.firstinspires.ftc.teamcode.drive.DriveConstants.kV;
+
 import java.util.List;
 
-@TeleOp
-public class FieldOrientedTeleOp extends OpMode {
+@Autonomous
+public class testAuto extends LinearOpMode {
 
     private Motor fL, fR, bL, bR, elevator0, elevator1, arm, intake;
     private MecanumDrive drive;
@@ -28,11 +42,13 @@ public class FieldOrientedTeleOp extends OpMode {
     private OpenCvCamera webcam;
     private MotorGroup elevator;
     //private PIDFController elevatorPIDF, armPIDF;
+    private int leftTarget;
+    private int rightTarget;
 
     int elevatorSP, armSP = 0;
 
     @Override
-    public void init() {
+    public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         fL = new Motor(hardwareMap, "fL", 448, 375);
         fR = new Motor(hardwareMap, "fR", 448, 375);
@@ -60,9 +76,6 @@ public class FieldOrientedTeleOp extends OpMode {
         arm.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         intake.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
 
-        //intake.setInverted(true);
-        intake.resetEncoder();
-
         elevator1.setInverted(true);
         elevator = new MotorGroup(elevator0, elevator1);
         //elevator.setRunMode(Motor.RunMode.PositionControl);
@@ -77,57 +90,56 @@ public class FieldOrientedTeleOp extends OpMode {
         gyro.init();
         gamepadEx1 = new GamepadEx(gamepad1);
         gamepadEx2 = new GamepadEx(gamepad2);
+
+        waitForStart();
+
+
+
     }
-
-    @Override
-    public void loop() {
-        drive.driveFieldCentric(
-                gamepadEx1.getLeftX(),
-                gamepadEx1.getLeftY(),
-                gamepadEx1.getRightX(),
-                gyro.getHeading());
-
-        /*
-        List<Double> positions = elevator.getPositions();
-        double elevatorOutput = elevatorPIDF.calculate((positions.get(0) + positions.get(1))/2, elevatorSP);
-        elevator.set(elevatorOutput);
-
-        double armOutput = armPIDF.calculate(arm.getCurrentPosition(), armSP);
-        arm.set(armOutput);
-
-        elevatorSP += (int) (10 * gamepadEx2.getLeftY());
-        armSP += (int) (10 * gamepadEx2.getRightX());
-        */
-
-        //elevator.setTargetPosition(elevatorDistance);
-        double elevatorStick = gamepadEx2.getLeftY();
-        // 38000-10
-        if (elevator1.getCurrentPosition() > 29000 && elevatorStick > 0) {
-            elevator.set(0);
-        } else if (elevator1.getCurrentPosition() < 400 && elevatorStick < 0) {
-            elevator.set(0);
-        } else if ((elevatorStick < 0.01) && (elevatorStick > -0.01)) {
-            elevator.stopMotor();
-        } else if (elevatorStick < 0) {
-            elevator.set(elevatorStick*0.5);
-        } else {
-            elevator.set(elevatorStick);
-        }
-
-
-        arm.set(gamepadEx2.getRightX());
-        double intakeSpeed = 0;
-        if(intake.getCurrentPosition() > 1150 && intake.getCurrentPosition() < 2600) {
-            intakeSpeed = 0.75;
-        }
-
-        intakeSpeed += gamepadEx2.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) - gamepadEx2.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER);
-        intake.set(-1*intakeSpeed);
-
-        telemetry.addData("gyro", gyro.getHeading());
-        telemetry.addData("elevator", elevator.getPositions());
-        telemetry.addData("arm", arm.getCurrentPosition());
-        telemetry.addData("intake", intake.getCurrentPosition());
+    /*
+    private void drive(double setpoint, DcMotor left, DcMotor right) {
+        telemetry.addData("State", Integer.toString(error));
         telemetry.update();
+        int target = (int)(setpoint * COUNTS_PER_INCH);
+
+        leftTarget = leftTarget + target;
+        rightTarget = rightTarget + target;
+
+        left.setTargetPosition(leftTarget);
+        right.setTargetPosition(rightTarget);
+
+        left.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        right.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        left.setPower(speed);
+        right.setPower(speed);
+
+        while(left.isBusy() && right.isBusy()) {
+            telemetry.addData("Error", Integer.toString(error));
+            telemetry.update();
+        }
     }
+
+    private void turn(double rotation, DcMotor left, DcMotor right) {
+        int target = (int) ((rotation / 180)*Math.PI*RADIUS*COUNTS_PER_INCH);
+
+        leftTarget = leftTarget + target;
+        rightTarget = rightTarget - target;
+
+        left.setTargetPosition(leftTarget);
+        right.setTargetPosition(rightTarget);
+
+        left.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        right.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        left.setPower(speed);
+        right.setPower(-speed);
+
+        while(left.isBusy() && right.isBusy()) {
+            telemetry.addData("Error", target-((left.getCurrentPosition()+right.getCurrentPosition())/2));
+            telemetry.update();
+        }
+    }
+
+     */
 }

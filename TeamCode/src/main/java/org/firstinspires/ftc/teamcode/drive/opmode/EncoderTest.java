@@ -28,6 +28,20 @@ NEW:
 fL:expansion hub 0
 bL:expansion hub 1
  */
+
+/*
+control:
+0: bL + left odo
+1: fL + straft odo
+2: elevator0 + arm encoder
+3: intake
+
+expansion:
+0: arm
+fR: right odo
+
+left should be reversed
+ */
 @TeleOp
 public class EncoderTest extends OpMode {
 
