@@ -8,6 +8,7 @@ import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.drivebase.MecanumDrive;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
+import com.arcrobotics.ftclib.gamepad.ToggleButtonReader;
 import com.arcrobotics.ftclib.hardware.RevIMU;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorGroup;
@@ -30,6 +31,8 @@ public class FieldOrientedTeleOp extends OpMode {
     //private PIDFController elevatorPIDF, armPIDF;
 
     int elevatorSP, armSP = 0;
+    double gyroOffset = 0;
+    ToggleButtonReader robotCentric;
 
     @Override
     public void init() {
@@ -77,15 +80,21 @@ public class FieldOrientedTeleOp extends OpMode {
         gyro.init();
         gamepadEx1 = new GamepadEx(gamepad1);
         gamepadEx2 = new GamepadEx(gamepad2);
+
+
+        robotCentric = new ToggleButtonReader(
+                gamepadEx1, GamepadKeys.Button.B
+        );
     }
 
     @Override
     public void loop() {
+
         drive.driveFieldCentric(
                 gamepadEx1.getLeftX(),
                 gamepadEx1.getLeftY(),
                 gamepadEx1.getRightX(),
-                gyro.getHeading());
+                gyro.getHeading() - gyroOffset);
 
         /*
         List<Double> positions = elevator.getPositions();
@@ -98,11 +107,29 @@ public class FieldOrientedTeleOp extends OpMode {
         elevatorSP += (int) (10 * gamepadEx2.getLeftY());
         armSP += (int) (10 * gamepadEx2.getRightX());
         */
+        /*
+        if(gamepadEx1.wasJustPressed(GamepadKeys.Button.A)) {
+            gyroOffset = gyro.getHeading();
+        }
+
+        if(robotCentric.getState()) {
+            drive.driveRobotCentric(
+                    gamepadEx1.getLeftX(),
+                    gamepadEx1.getLeftY(),
+                    gamepadEx1.getRightX());
+        } else {
+            drive.driveFieldCentric(
+                    gamepadEx1.getLeftX(),
+                    gamepadEx1.getLeftY(),
+                    gamepadEx1.getRightX(),
+                    gyro.getHeading() - gyroOffset);
+        }
+         */
 
         //elevator.setTargetPosition(elevatorDistance);
         double elevatorStick = gamepadEx2.getLeftY();
         // 38000-10
-        if (elevator1.getCurrentPosition() > 29000 && elevatorStick > 0) {
+        if (elevator1.getCurrentPosition() > 29700 && elevatorStick > 0) {
             elevator.set(0);
         } else if (elevator1.getCurrentPosition() < 400 && elevatorStick < 0) {
             elevator.set(0);
@@ -118,7 +145,7 @@ public class FieldOrientedTeleOp extends OpMode {
         arm.set(gamepadEx2.getRightX());
         double intakeSpeed = 0;
         if(intake.getCurrentPosition() > 1150 && intake.getCurrentPosition() < 2600) {
-            intakeSpeed = 0.75;
+            intakeSpeed = 0.95;
         }
 
         intakeSpeed += gamepadEx2.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) - gamepadEx2.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER);
