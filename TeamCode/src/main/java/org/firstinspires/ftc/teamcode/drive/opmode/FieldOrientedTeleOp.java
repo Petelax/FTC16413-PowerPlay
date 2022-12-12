@@ -4,6 +4,7 @@ import static java.lang.Math.signum;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.arcrobotics.ftclib.controller.PDController;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.drivebase.MecanumDrive;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
@@ -11,9 +12,11 @@ import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.arcrobotics.ftclib.gamepad.ToggleButtonReader;
 import com.arcrobotics.ftclib.hardware.RevIMU;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
+import com.arcrobotics.ftclib.hardware.motors.MotorEx;
 import com.arcrobotics.ftclib.hardware.motors.MotorGroup;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.openftc.easyopencv.OpenCvCamera;
 
@@ -28,11 +31,16 @@ public class FieldOrientedTeleOp extends OpMode {
     private RevIMU gyro;
     private OpenCvCamera webcam;
     private MotorGroup elevator;
-    //private PIDFController elevatorPIDF, armPIDF;
+    private PDController armPD;
 
     int elevatorSP, armSP = 0;
     double gyroOffset = 0;
     ToggleButtonReader robotCentric;
+    double armKD = 0.005;
+    int armApec = 2500;
+    ElapsedTime time;
+    double currentTime, lastTime = 0;
+    int currentPos, lastPos = 0;
 
     @Override
     public void init() {
@@ -43,13 +51,11 @@ public class FieldOrientedTeleOp extends OpMode {
         bR = new Motor(hardwareMap, "bR", 448, 375);
         elevator0 = new Motor(hardwareMap, "elevator0", Motor.GoBILDA.RPM_435);
         elevator1 = new Motor(hardwareMap, "elevator1", Motor.GoBILDA.RPM_435);
-        arm = new Motor(hardwareMap, "arm");
+        arm = new MotorEx(hardwareMap, "arm");
         intake = new Motor(hardwareMap, "intake");
 
-        /*
-        elevatorPIDF = new PIDFController(0.001, 0, 0, 0);
-        armPIDF = new PIDFController(0.001, 0, 0, 0);
-        */
+        //elevatorPIDF = new PIDFController(0.001, 0, 0, 0);
+        armPD = new PDController(0, 0.001);
 
         fL.resetEncoder();
         fR.resetEncoder();
@@ -81,6 +87,7 @@ public class FieldOrientedTeleOp extends OpMode {
         gamepadEx1 = new GamepadEx(gamepad1);
         gamepadEx2 = new GamepadEx(gamepad2);
 
+        time = new ElapsedTime();
 
         robotCentric = new ToggleButtonReader(
                 gamepadEx1, GamepadKeys.Button.B
@@ -89,6 +96,8 @@ public class FieldOrientedTeleOp extends OpMode {
 
     @Override
     public void loop() {
+        currentPos = arm.getCurrentPosition();
+        currentTime = time.milliseconds();
 
         drive.driveFieldCentric(
                 gamepadEx1.getLeftX(),
@@ -126,10 +135,14 @@ public class FieldOrientedTeleOp extends OpMode {
         }
          */
 
+        double D = (currentPos - lastPos) / (currentTime - lastTime);
+
+
+
         //elevator.setTargetPosition(elevatorDistance);
         double elevatorStick = gamepadEx2.getLeftY();
         // 38000-10
-        if (elevator1.getCurrentPosition() > 29700 && elevatorStick > 0) {
+        if (elevator1.getCurrentPosition() > 34000 && elevatorStick > 0) {
             elevator.set(0);
         } else if (elevator1.getCurrentPosition() < 400 && elevatorStick < 0) {
             elevator.set(0);
@@ -141,8 +154,13 @@ public class FieldOrientedTeleOp extends OpMode {
             elevator.set(elevatorStick);
         }
 
+        //arm.set((arm.getCurrentPosition() - armApec) * armKP);
 
-        arm.set(gamepadEx2.getRightX());
+        //if(arm.getCurrentPosition() < 2500 && gamepadEx2.getRightX() > 0) {
+            //arm.set(gamepadEx2.getRightX() * 0.5);
+        //} else {
+            arm.set(((3000 * gamepadEx2.getRightX()) - D) * armKD);
+        //}
         double intakeSpeed = 0;
         if(intake.getCurrentPosition() > 1150 && intake.getCurrentPosition() < 2600) {
             intakeSpeed = 0.95;
@@ -150,6 +168,9 @@ public class FieldOrientedTeleOp extends OpMode {
 
         intakeSpeed += gamepadEx2.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) - gamepadEx2.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER);
         intake.set(-1*intakeSpeed);
+
+        lastTime = time.milliseconds();
+        lastPos = currentPos;
 
         telemetry.addData("gyro", gyro.getHeading());
         telemetry.addData("elevator", elevator.getPositions());
