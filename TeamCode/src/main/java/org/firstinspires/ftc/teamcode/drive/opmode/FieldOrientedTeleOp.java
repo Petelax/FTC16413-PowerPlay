@@ -11,13 +11,18 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.arcrobotics.ftclib.gamepad.ToggleButtonReader;
 import com.arcrobotics.ftclib.hardware.RevIMU;
+import com.arcrobotics.ftclib.hardware.ServoEx;
+import com.arcrobotics.ftclib.hardware.SimpleServo;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
 import com.arcrobotics.ftclib.hardware.motors.MotorGroup;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.util.Toggle;
 import org.openftc.easyopencv.OpenCvCamera;
 
 import java.util.List;
@@ -25,7 +30,8 @@ import java.util.List;
 @TeleOp
 public class FieldOrientedTeleOp extends OpMode {
 
-    private Motor fL, fR, bL, bR, elevator0, elevator1, arm, intake;
+    private Motor fL, fR, bL, bR, elevator0, elevator1, arm;
+    private SimpleServo intake;
     private MecanumDrive drive;
     private GamepadEx gamepadEx1, gamepadEx2;
     private RevIMU gyro;
@@ -35,7 +41,9 @@ public class FieldOrientedTeleOp extends OpMode {
 
     int elevatorSP, armSP = 0;
     double gyroOffset = 0;
-    ToggleButtonReader robotCentric;
+    //ToggleButtonReader robotCentric;
+    //ToggleButtonReader intakePos;
+    Toggle intakeToggle;
     double armKD = 0.005;
     int armApec = 2500;
     ElapsedTime time;
@@ -52,7 +60,8 @@ public class FieldOrientedTeleOp extends OpMode {
         elevator0 = new Motor(hardwareMap, "elevator0", Motor.GoBILDA.RPM_435);
         elevator1 = new Motor(hardwareMap, "elevator1", Motor.GoBILDA.RPM_435);
         arm = new MotorEx(hardwareMap, "arm");
-        intake = new Motor(hardwareMap, "intake");
+        //intake = new Motor(hardwareMap, "intake");
+        intake = new SimpleServo(hardwareMap, "intake", -135, 135, AngleUnit.DEGREES);
 
         //elevatorPIDF = new PIDFController(0.001, 0, 0, 0);
         armPD = new PDController(0, 0.001);
@@ -67,10 +76,10 @@ public class FieldOrientedTeleOp extends OpMode {
         bL.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         bR.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         arm.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        intake.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        //intake.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
 
         //intake.setInverted(true);
-        intake.resetEncoder();
+        //intake.resetEncoder();
 
         elevator1.setInverted(true);
         elevator = new MotorGroup(elevator0, elevator1);
@@ -89,9 +98,15 @@ public class FieldOrientedTeleOp extends OpMode {
 
         time = new ElapsedTime();
 
+        /*
         robotCentric = new ToggleButtonReader(
                 gamepadEx1, GamepadKeys.Button.B
         );
+        intakePos = new ToggleButtonReader(
+                gamepadEx2, GamepadKeys.Button.A
+        );
+         */
+        intakeToggle = new Toggle(gamepadEx2, GamepadKeys.Button.A);
     }
 
     @Override
@@ -142,6 +157,7 @@ public class FieldOrientedTeleOp extends OpMode {
         //elevator.setTargetPosition(elevatorDistance);
         double elevatorStick = gamepadEx2.getLeftY();
         // 38000-10
+        /*
         if (elevator1.getCurrentPosition() > 34000 && elevatorStick > 0) {
             elevator.set(0);
         } else if (elevator1.getCurrentPosition() < 400 && elevatorStick < 0) {
@@ -150,9 +166,9 @@ public class FieldOrientedTeleOp extends OpMode {
             elevator.stopMotor();
         } else if (elevatorStick < 0) {
             elevator.set(elevatorStick*0.5);
-        } else {
+        } else {*/
             elevator.set(elevatorStick);
-        }
+        /*}*/
 
         //arm.set((arm.getCurrentPosition() - armApec) * armKP);
 
@@ -161,13 +177,19 @@ public class FieldOrientedTeleOp extends OpMode {
         //} else {
             arm.set(((3000 * gamepadEx2.getRightX()) - D) * armKD);
         //}
+        /*
         double intakeSpeed = 0;
         if(intake.getCurrentPosition() > 1150 && intake.getCurrentPosition() < 2600) {
             intakeSpeed = 0.95;
         }
 
         intakeSpeed += gamepadEx2.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) - gamepadEx2.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER);
-        intake.set(-1*intakeSpeed);
+
+         */
+        //intake.set(-1*intakeSpeed);
+        //intake.rotateBy(0.1 * (gamepadEx2.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) - gamepadEx2.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER)));
+
+        intake.turnToAngle(intakeToggle.getState() ? -45 : -130);
 
         lastTime = time.milliseconds();
         lastPos = currentPos;
@@ -175,7 +197,11 @@ public class FieldOrientedTeleOp extends OpMode {
         telemetry.addData("gyro", gyro.getHeading());
         telemetry.addData("elevator", elevator.getPositions());
         telemetry.addData("arm", arm.getCurrentPosition());
-        telemetry.addData("intake", intake.getCurrentPosition());
+        telemetry.addData("intake", intake.getAngle());
+        telemetry.addData("intakePos", intakeToggle.getState());
+        //telemetry.addData("intake", intake.getCurrentPosition());
         telemetry.update();
+
+        intakeToggle.update();
     }
 }
