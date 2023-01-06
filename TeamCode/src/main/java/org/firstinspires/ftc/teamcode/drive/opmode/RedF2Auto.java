@@ -147,9 +147,12 @@ class SignalPipeline extends OpenCvPipeline {
     boolean viewportPaused;
     private Mat coneSubmat;
     //private Mat YCrCb;
-
-    private final Point point0 = new Point(80, 100);
-    private final Point point1 = new Point(140, 140);
+    /*
+    80, 100
+    140, 140
+    */
+    private final Point point0 = new Point(140, 100);
+    private final Point point1 = new Point(200, 140);
     private final Rect coneRect = new Rect(point0,point1);
 
     //int Y, Cr, Cb;
@@ -168,7 +171,7 @@ class SignalPipeline extends OpenCvPipeline {
 
         //Imgproc.cvtColor(input, YCrCb, Imgproc.COLOR_RGB2BGR);
 
-        Imgproc.rectangle(input, coneRect, new Scalar(0,255,0), 4);
+        Imgproc.rectangle(input, coneRect, new Scalar(0,255,0), 3);
 
         //Y = (int) Core.mean(YCrCb).val[0];
         //Cb = (int) Core.mean(YCrCb).val[2];
